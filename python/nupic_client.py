@@ -21,17 +21,27 @@ def socketCycle(model, resultHandler):
   while True:
     data = conn.recv(1024)
     if not data: break
-    # print data
     vector = numpy.array(
       [int(float(n)) for n in data.split('\n')[0].split(',')]
     )
-    print vector
+    radius = 10
+    modelInput = {
+      "vector": (vector, radius)
+    }
+    result = model.run(modelInput)
+    resultHandler(result)
 
   conn.close()
 
 
-def predictionResultHandler(inferences):
-  pass
+def printHashes(perc, width=50):
+  hashes = int(perc * width)
+  print "#" * hashes
+
+
+def predictionResultHandler(result):
+  anomalyScore = result.inferences["anomalyScore"]
+  printHashes(anomalyScore)
 
 
 def run():

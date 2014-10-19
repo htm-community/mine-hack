@@ -53,10 +53,8 @@ MODEL_PARAMS = {
                     'fieldname': u'vector',
                     'n': 2048,
                     'w': 51,
-                    'scale': 5,
-                    'timestep': 10,
                     'name': u'vector',
-                    'type': 'GeospatialCoordinateEncoder'
+                    'type': 'CoordinateEncoder'
                 },
             },
 
