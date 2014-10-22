@@ -16,3 +16,7 @@ First, start the python process that opens a socket and waits for a connection f
     python python/nupic_client.py
 
 Then, start Minecraft using the Forge Mod Loader (you can find instructions on Eclipse and IntelliJ IDEA startup [here](http://www.minecraftforge.net/wiki/Installation/Source)).
+
+### Demo
+
+[![Demo video image](http://img.youtube.com/vi/ToJHv_K1c_U/0.jpg)](https://www.youtube.com/watch?v=ToJHv_K1c_U)
