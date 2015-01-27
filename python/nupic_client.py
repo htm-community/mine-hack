@@ -46,7 +46,8 @@ def predictionResultHandler(result):
 
 def run():
   params = model_params.MODEL_PARAMS
-  model = ModelFactory.create(params) 
+  model = ModelFactory.create(params)
+  model.enableInference({"predictedField": "vector"})
   socketCycle(model, predictionResultHandler)
 
 
