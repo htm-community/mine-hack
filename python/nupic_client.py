@@ -1,15 +1,18 @@
 import socket
+import random
 import numpy as np
 
 from nupic.frameworks.opf.modelfactory import ModelFactory
+# from nupic.algorithms import anomaly_likelihood
 
+from plotter import MinecraftAnomalyPlotter
 from model_params import model_params
 
 HOST = "localhost"                 # Symbolic name meaning the local host
 PORT = 50007              # Arbitrary non-privileged port
 # Used for partial socket messages.
 socket_buffer = None
-
+# anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
 
 def calculate_radius(point1, point2):
   # print "Calculating distance between points:"
@@ -41,7 +44,7 @@ def process_socket_message(msg):
   return lines[0:-1]
 
 
-def socket_cycle(model, resultHandler):
+def socket_cycle(model):
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   s.bind((HOST, PORT))
   print "Waiting for a socket connection..."
@@ -51,6 +54,7 @@ def socket_cycle(model, resultHandler):
 
   print "Connected by", addr
   last_point = None
+  plotter = MinecraftAnomalyPlotter("Minecraft Location Anomalies")
 
   while True:
     data = conn.recv(1024)
@@ -70,26 +74,38 @@ def socket_cycle(model, resultHandler):
         "vector": (vector, radius)
       }
       result = model.run(modelInput)
-      resultHandler(result)
+      anomalyScore = result.inferences["anomalyScore"]
+      # anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(
+      #   random.random(), anomalyScore
+      # )
+      # print "score: %f" % anomalyScore
+      # print "likelihood: %f" % anomalyLikelihood
+      predictionResultHandler(anomalyScore, vector, radius)
 
   conn.close()
 
 
-def printHashes(perc, width=50):
+def printHashes(perc, coords, radius, width=50):
   hashes = int(perc * width)
-  print "#" * hashes
+  hashes = ("#" * hashes).ljust(width)
+  print "%s x:%i y:%i z:%i %i blocks/s" % (
+    hashes, 
+    int(coords[0]), 
+    int(coords[1]), 
+    int(coords[2]), 
+    radius
+  )
 
 
-def predictionResultHandler(result):
-  anomalyScore = result.inferences["anomalyScore"]
-  printHashes(anomalyScore)
+def predictionResultHandler(anomalyScore, xyz, radius):
+  printHashes(anomalyScore, xyz, radius)
 
 
 def run():
   params = model_params.MODEL_PARAMS
   model = ModelFactory.create(params)
   model.enableInference({"predictedField": "vector"})
-  socket_cycle(model, predictionResultHandler)
+  socket_cycle(model)
 
 
 if __name__ == "__main__":

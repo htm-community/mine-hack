@@ -38,6 +38,7 @@ public class EventHookContainer {
 	
 	@SubscribeEvent
 	public void worldClose(WorldEvent.Unload event) {
+		// Close socket on game exit.
 		out.close();
 	}
 	
@@ -45,7 +46,6 @@ public class EventHookContainer {
 	public void playerDoesAnything(StartTracking event) {
 		EntityPlayer player = (EntityPlayer) event.entity;
 		String location = player.posX + "," + player.posY + "," + player.posZ;
-		System.out.println("Last location: " + this.lastLocation);
 		long gameTime = new Date().getTime();
 		String message = location + " " + gameTime;
 		if (! this.lastLocation.equals(location)) {
