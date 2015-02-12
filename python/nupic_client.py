@@ -80,7 +80,8 @@ def socket_cycle(model):
       # )
       # print "score: %f" % anomalyScore
       # print "likelihood: %f" % anomalyLikelihood
-      predictionResultHandler(anomalyScore, vector, radius)
+      printHashes(anomalyScore, vector, radius)
+      plotter.add(time, xyz[0], xyz[1], xyz[2], radius, anomalyScore)
 
   conn.close()
 
@@ -95,10 +96,6 @@ def printHashes(perc, coords, radius, width=50):
     int(coords[2]), 
     radius
   )
-
-
-def predictionResultHandler(anomalyScore, xyz, radius):
-  printHashes(anomalyScore, xyz, radius)
 
 
 def run():
