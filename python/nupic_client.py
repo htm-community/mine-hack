@@ -3,16 +3,19 @@ import random
 import numpy as np
 
 from nupic.frameworks.opf.modelfactory import ModelFactory
-# from nupic.algorithms import anomaly_likelihood
+from nupic.algorithms import anomaly_likelihood
 
 from plotter import MinecraftAnomalyPlotter
 from model_params import model_params
 
-HOST = "localhost"                 # Symbolic name meaning the local host
-PORT = 50007              # Arbitrary non-privileged port
+HOST = "localhost"
+PORT = 50007
 # Used for partial socket messages.
 socket_buffer = None
-# anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
+anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood(
+  claLearningPeriod=100,
+  estimationSamples=100
+)
 
 def calculate_radius(point1, point2):
   # print "Calculating distance between points:"
@@ -75,13 +78,11 @@ def socket_cycle(model):
       }
       result = model.run(modelInput)
       anomalyScore = result.inferences["anomalyScore"]
-      # anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(
-      #   random.random(), anomalyScore
-      # )
-      # print "score: %f" % anomalyScore
-      # print "likelihood: %f" % anomalyLikelihood
+      anomalyLikelihood = anomalyLikelihoodHelper.anomalyProbability(
+        random.random(), anomalyScore
+      )
       printHashes(anomalyScore, vector, radius)
-      plotter.add(time, xyz[0], xyz[1], xyz[2], radius, anomalyScore)
+      plotter.add(time, xyz[0], xyz[1], xyz[2], radius, anomalyScore, anomalyLikelihood)
 
   conn.close()
 

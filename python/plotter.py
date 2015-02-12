@@ -8,6 +8,37 @@ import matplotlib.gridspec as gridspec
 
 
 WINDOW = 300
+HIGHLIGHT_ALPHA = 0.3
+ANOMALY_HIGHLIGHT_COLOR = 'red'
+WEEKEND_HIGHLIGHT_COLOR = 'yellow'
+ANOMALY_THRESHOLD = 0.9
+
+
+def extract_anomaly_indices(likelihoods):
+  anomalies_out = []
+  anomaly_start = None
+  for i, likelihood in enumerate(likelihoods):
+    if likelihood >= ANOMALY_THRESHOLD:
+      if anomaly_start is None:
+        # Mark start of anomaly
+        anomaly_start = i
+    else:
+      if anomaly_start is not None:
+        # Mark end of anomaly
+        anomalies_out.append((
+          anomaly_start, i, ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
+        ))
+        anomaly_start = None
+
+  # Cap it off if we're still in the middle of an anomaly
+  if anomaly_start is not None:
+    anomalies_out.append((
+      anomaly_start, len(likelihoods)-1,
+      ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
+    ))
+
+  return anomalies_out
+
 
 
 class MinecraftAnomalyPlotter(object):
@@ -17,21 +48,32 @@ class MinecraftAnomalyPlotter(object):
     self.name = name
     matplotlib.rcParams['legend.fontsize'] = 10
     self.initialized = False
+    # For anomaly chart highlights
+    self._chartHighlights = []
     
 
-  def _initialize(self, timestamp, x, y, z, speed, anomalyScore):
+  def _initialize(self, 
+                  timestamp, 
+                  x, y, z, 
+                  speed, 
+                  anomaly_score, 
+                  anomaly_likelihood):
     # Interactive plot for live-updating.
     plt.ion()
 
     # Local lists of the data to be plotted.
     # The anomaly chart is a rolling window, so populate deques.
     self.timestamps = deque([timestamp] * WINDOW, maxlen=WINDOW)
-    self.anomalyScores = deque([0.0] * WINDOW, maxlen=WINDOW)
+    self.anomaly_scores = deque([0.0] * WINDOW, maxlen=WINDOW)
+    self.anomaly_likelihoods = deque([0.0] * WINDOW, maxlen=WINDOW)
     # The position chart is not rolling, so they can accumulate.
     self.x = [x]
     self.y = [z]
     self.z = [y]
     self.speed = [speed]
+    self.timestamps.append(timestamp)
+    self.anomaly_scores.append(anomaly_score)
+    self.anomaly_likelihoods.append(anomaly_likelihood)
     
     fig = plt.figure(figsize=(16, 10))
     fig.suptitle("Minecraft Location Anomalies")
@@ -47,14 +89,22 @@ class MinecraftAnomalyPlotter(object):
     
     anomalyRange = (0.0, 1.0)
     
-    anomalyScorePlot, = plot_anomaly.plot(
-      self.timestamps, self.anomalyScores, 'r'
+    # Plot anomaly score line
+    anomaly_score_plot, = plot_anomaly.plot(
+      self.timestamps, self.anomaly_scores, 'm'
     )
-    anomalyScorePlot.axes.set_ylim(anomalyRange)
+    anomaly_score_plot.axes.set_ylim(anomalyRange)
+    self.anomaly_score_line = anomaly_score_plot
+
+    # Plot anomaly likelihood line
+    anomaly_likelihood_plot, = plot_anomaly.plot(
+      self.timestamps, self.anomaly_likelihoods, 'r'
+    )
+    anomaly_likelihood_plot.axes.set_ylim(anomalyRange)
+    self.anomaly_likelihood_line = anomaly_likelihood_plot
     
-    self.anomalyScoreLine = anomalyScorePlot
     plot_anomaly.legend(
-      tuple(['anomaly score']), loc=3
+      tuple(['anomaly score', 'anomaly likelihood']), loc=3
     )
 
     plt.tight_layout()
@@ -62,15 +112,20 @@ class MinecraftAnomalyPlotter(object):
     self.initialized = True
 
 
-  def add(self, timestamp, x, y, z, speed, anomalyScore):
+  def add(self, timestamp, x, y, z, speed, anomaly_score, anomaly_likelihood):
+
     if not self.initialized:
-      return self._initialize(timestamp, x, y, z, speed, anomalyScore)
+      return self._initialize(
+        timestamp, x, y, z, speed, anomaly_score, anomaly_likelihood
+      )
+
+    # Update data.
     self.x.append(x)
     self.y.append(z)
     self.z.append(y)
     self.timestamps.append(timestamp)
-    self.anomalyScores.append(anomalyScore)
-    
+    self.anomaly_scores.append(anomaly_score)
+    self.anomaly_likelihoods.append(anomaly_likelihood)    
     self.location_line.set_xdata(self.x)
     self.location_line.set_ydata(self.y)
     self.location_line.set_3d_properties(zs=self.z)
@@ -80,13 +135,34 @@ class MinecraftAnomalyPlotter(object):
     self.plot_3d.set_zlim3d(min(self.z), max(self.z))
     self.plot_3d.autoscale_view(True, True, True)
     
-    self.anomalyScoreLine.set_xdata(self.timestamps)
-    self.anomalyScoreLine.set_ydata(self.anomalyScores)
-   
+    self.anomaly_score_line.set_xdata(self.timestamps)
+    self.anomaly_score_line.set_ydata(self.anomaly_scores)
+    self.anomaly_likelihood_line.set_xdata(self.timestamps)
+    self.anomaly_likelihood_line.set_ydata(self.anomaly_likelihoods)
+
+    # Remove previous highlighted regions
+    for poly in self._chartHighlights:
+      poly.remove()
+    self._chartHighlights = []
+
+    anomalies = extract_anomaly_indices(self.anomaly_likelihoods)
+
+    # Highlight anomalies in anomaly chart
+    self.highlight_chart(anomalies, self.anomaly_plot)
+
     self.anomaly_plot.relim()
     self.anomaly_plot.autoscale_view(True, True, True)
     
     plt.draw()
+
+
+  def highlight_chart(self, highlights, chart):
+    for highlight in highlights:
+      # Each highlight contains [start-index, stop-index, color, alpha]
+      self._chartHighlights.append(chart.axvspan(
+        self.timestamps[highlight[0]], self.timestamps[highlight[1]],
+        color=highlight[2], alpha=highlight[3]
+      ))
 
 
   def close(self):
