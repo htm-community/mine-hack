@@ -11,7 +11,7 @@ WINDOW = 300
 HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
 WEEKEND_HIGHLIGHT_COLOR = 'yellow'
-ANOMALY_THRESHOLD = 0.9
+ANOMALY_THRESHOLD = 0.85
 
 
 def extract_anomaly_indices(likelihoods):
@@ -50,13 +50,13 @@ class MinecraftAnomalyPlotter(object):
     self.initialized = False
     # For anomaly chart highlights
     self._chartHighlights = []
-    
 
-  def _initialize(self, 
-                  timestamp, 
-                  x, y, z, 
-                  speed, 
-                  anomaly_score, 
+
+  def _initialize(self,
+                  timestamp,
+                  x, y, z,
+                  speed,
+                  anomaly_score,
                   anomaly_likelihood):
     # Interactive plot for live-updating.
     plt.ion()
@@ -74,11 +74,11 @@ class MinecraftAnomalyPlotter(object):
     self.timestamps.append(timestamp)
     self.anomaly_scores.append(anomaly_score)
     self.anomaly_likelihoods.append(anomaly_likelihood)
-    
-    fig = plt.figure(figsize=(16, 10))
+
+    fig = plt.figure(figsize=(12, 10))
     fig.suptitle("Minecraft Location Anomalies")
     gs = gridspec.GridSpec(2, 1, height_ratios=[3,  1])
-    
+
     # 3D XYZ plot
     self.plot_3d = plot_3d = fig.add_subplot(gs[0, 0], projection='3d')
     self.location_line = plot_3d.plot3D(self.x, self.y, zs=self.z)[0]
@@ -86,9 +86,9 @@ class MinecraftAnomalyPlotter(object):
     # Anomaly score line graph
     self.anomaly_plot = plot_anomaly = fig.add_subplot(gs[1])
     plot_anomaly.grid(True)
-    
+
     anomalyRange = (0.0, 1.0)
-    
+
     # Plot anomaly score line
     anomaly_score_plot, = plot_anomaly.plot(
       self.timestamps, self.anomaly_scores, 'm'
@@ -102,7 +102,7 @@ class MinecraftAnomalyPlotter(object):
     )
     anomaly_likelihood_plot.axes.set_ylim(anomalyRange)
     self.anomaly_likelihood_line = anomaly_likelihood_plot
-    
+
     plot_anomaly.legend(
       tuple(['anomaly score', 'anomaly likelihood']), loc=3
     )
@@ -125,7 +125,7 @@ class MinecraftAnomalyPlotter(object):
     self.z.append(y)
     self.timestamps.append(timestamp)
     self.anomaly_scores.append(anomaly_score)
-    self.anomaly_likelihoods.append(anomaly_likelihood)    
+    self.anomaly_likelihoods.append(anomaly_likelihood)
     self.location_line.set_xdata(self.x)
     self.location_line.set_ydata(self.y)
     self.location_line.set_3d_properties(zs=self.z)
@@ -134,7 +134,7 @@ class MinecraftAnomalyPlotter(object):
     self.plot_3d.set_ylim3d(min(self.y), max(self.y))
     self.plot_3d.set_zlim3d(min(self.z), max(self.z))
     self.plot_3d.autoscale_view(True, True, True)
-    
+
     self.anomaly_score_line.set_xdata(self.timestamps)
     self.anomaly_score_line.set_ydata(self.anomaly_scores)
     self.anomaly_likelihood_line.set_xdata(self.timestamps)
@@ -152,7 +152,7 @@ class MinecraftAnomalyPlotter(object):
 
     self.anomaly_plot.relim()
     self.anomaly_plot.autoscale_view(True, True, True)
-    
+
     plt.draw()
 
 
