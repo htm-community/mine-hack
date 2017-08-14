@@ -2,7 +2,7 @@ import socket
 import random
 import numpy as np
 
-from nupic.frameworks.opf.modelfactory import ModelFactory
+from nupic.frameworks.opf.model_factory import ModelFactory
 from nupic.algorithms import anomaly_likelihood
 
 from plotter import MinecraftAnomalyPlotter
